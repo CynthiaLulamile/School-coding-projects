@@ -1,198 +1,167 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
-// Enum for Houses
-public enum House
+namespace FestivalBoothTracker
 {
-    Fangs,
-    Claws,
-    Shadows,
-    Spirits
-}
-
-// Base Student Class
-public abstract class Student
-{
-    public string Name { get; }
-    public int Age { get; }
-    public House House { get; }
-
-    protected Student(string name, int age, House house)
+    class Program
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Name cannot be blank.");
-        if (age < 10)
-            throw new ArgumentException("Age must be 10 or older.");
-
-        Name = name;
-        Age = age;
-        House = house;
-    }
-
-    public abstract void UseAbility();
-}
-
-// Derived Classes for Each Type of Student
-public class Vampire : Student
-{
-    public Vampire(string name, int age, House house) : base(name, age, house) { }
-
-    public override void UseAbility()
-    {
-        Console.WriteLine($"{Name} bites!");
-    }
-}
-
-public class Werewolf : Student
-{
-    public Werewolf(string name, int age, House house) : base(name, age, house) { }
-
-    public override void UseAbility()
-    {
-        Console.WriteLine($"{Name} howls at the moon!");
-    }
-}
-
-public class Psychic : Student
-{
-    public Psychic(string name, int age, House house) : base(name, age, house) { }
-
-    public override void UseAbility()
-    {
-        Console.WriteLine($"{Name} has a vision!");
-    }
-}
-
-// Student Manager Class
-public class StudentManager
-{
-    private List<Student> students = new List<Student>();
-    public event Action<string>? StudentAdmitted;
-    public event Action<string>? AbilityUsed;
-
-    public void AdmitStudent(string name, int age, House house)
-    {
-        if (students.Exists(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("Duplicate student name.");
-
-        Student student;
-        switch (house)
+        static void Main(string[] args)
         {
-            case House.Fangs:
-                student = new Vampire(name, age, house);
-                break;
-            case House.Claws:
-                student = new Werewolf(name, age, house);
-                break;
-            case House.Shadows:
-                student = new Psychic(name, age, house);
-                break;
-            case House.Spirits:
-                throw new ArgumentException("Invalid house.");
-            default:
-                throw new ArgumentException("Invalid house.");
-        }
+            BoothManager boothManager = new BoothManager();
+            int choice;
 
-        students.Add(student);
-        StudentAdmitted?.Invoke($"{name} has been admitted to {house}.");
-    }
-
-    public void UseStudentAbility(string name)
-    {
-        var student = students.Find(s => s.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-        if (student == null)
-            throw new InvalidOperationException("Student not found.");
-
-        student.UseAbility();
-        AbilityUsed?.Invoke($"{name} used their ability.");
-    }
-
-    public void ListStudentsByHouse()
-    {
-        foreach (var house in Enum.GetValues(typeof(House)))
-        {
-            Console.WriteLine($"{house}:");
-            foreach (var student in students.FindAll(s => s.House == (House)house))
+            do
             {
-                Console.WriteLine($" - {student.Name}");
-            }
-        }
-    }
-}
+                Console.Clear();
+                Console.WriteLine("Festival Booth Tracker");
+                Console.WriteLine("1. Register a new booth");
+                Console.WriteLine("2. Record attendee at a booth");
+                Console.WriteLine("3. Display all booths with attendee count");
+                Console.WriteLine("4. View feedback for a booth");
+                Console.WriteLine("5. Exit");
+                Console.Write("Enter your choice: ");
+                
+                // Input validation for menu choice
+                while (!int.TryParse(Console.ReadLine(), out choice) || choice < 1 || choice > 5)
+                {
+                    Console.Write("Invalid choice. Please enter a number between 1 and 5: ");
+                }
 
-// Main Program
-class Program
-{
-    static void Main()
-    {
-        var manager = new StudentManager();
-        manager.StudentAdmitted += (message) => Console.WriteLine(message);
-        manager.AbilityUsed += (message) => Console.WriteLine(message);
-
-        while (true)
-        {
-            Console.WriteLine("1. Admit Student");
-            Console.WriteLine("2. Use Student Ability");
-            Console.WriteLine("3. List Students by House");
-            Console.WriteLine("4. Exit");
-            Console.Write("Choose an option: ");
-            var choice = Console.ReadLine();
-
-            try
-            {
                 switch (choice)
                 {
-                    case "1":
-                        Console.Write("Enter student name: ");
-                        var name = Console.ReadLine();
-                        if (string.IsNullOrWhiteSpace(name))
-                        {
-                            Console.WriteLine("Name cannot be empty!");
-                            continue;
-                        }
-                            Console.Write("Enter student age: ");
-                        var ageInput = Console.ReadLine();
-                        if (ageInput == null || !int.TryParse(ageInput, out var age))
-                        {
-                            Console.WriteLine("Invalid age input.");
-                            continue;
-                        }
-                        Console.Write("Enter house (Fangs, Claws, Shadows, Spirits): ");
-                        var houseInput = Console.ReadLine();
-                        if (houseInput == null || !Enum.TryParse(houseInput, true, out House house))
-                        {
-                            Console.WriteLine("Invalid house input.");
-                            continue;
-                        }
-                        manager.AdmitStudent(name, age, house);
+                    case 1:
+                        boothManager.RegisterBooth();
                         break;
-
-                    case "2":
-                          Console.Write("Enter student name to use ability: ");
-                          var studentName = Console.ReadLine();
-                         if (string.IsNullOrWhiteSpace(studentName))  // ADD THIS NULL CHECK
-                     {
-                             Console.WriteLine("Name cannot be empty!");
-                                  continue;
-                                 }
-                             manager.UseStudentAbility(studentName);
-                      break;
-
-                    case "3":
-                        manager.ListStudentsByHouse();
+                    case 2:
+                        boothManager.RecordAttendee();
                         break;
-
-                    case "4":
-                        return;
-
-                    default:
-                        Console.WriteLine("Invalid option. Please try again.");
+                    case 3:
+                        boothManager.DisplayBooths();
+                        break;
+                    case 4:
+                        boothManager.ViewFeedback();
+                        break;
+                    case 5:
+                        Console.WriteLine("Exiting the program. Thank you!");
                         break;
                 }
-            }
-            catch (Exception ex)
+
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey();
+            } while (choice != 5);
+        }
+    }
+
+    // Class to represent a booth
+    public class Booth
+    {
+        public int BoothID { get; set; }
+        public string BoothName { get; set; }
+        public string BoothType { get; set; }
+        public List<Attendee> Attendees { get; set; } = new List<Attendee>();
+    }
+
+    // Class to represent an attendee
+    public class Attendee
+    {
+        public string Name { get; set; }
+        public int? Rating { get; set; }
+    }
+
+    // Class to manage booths and attendees
+    public class BoothManager
+    {
+        private List<Booth> booths = new List<Booth>();
+        private int nextBoothID = 1;
+
+        // Method to register a new booth
+        public void RegisterBooth()
+        {
+            Console.Write("Enter Booth Name: ");
+            string boothName = Console.ReadLine();
+
+            Console.Write("Enter Booth Type (Game, Food, Craft, Info): ");
+            string boothType = Console.ReadLine();
+
+            Booth booth = new Booth
             {
-                Console.WriteLine($"Error: {ex.Message}");
+                BoothID = nextBoothID++,
+                BoothName = boothName,
+                BoothType = boothType
+            };
+
+            booths.Add(booth);
+            Console.WriteLine("Booth registered successfully!");
+        }
+
+        // Method to record an attendee at a booth
+        public void RecordAttendee()
+        {
+            Console.Write("Enter Booth ID: ");
+            int boothID;
+            while (!int.TryParse(Console.ReadLine(), out boothID) || !booths.Any(b => b.BoothID == boothID))
+            {
+                Console.Write("Invalid Booth ID. Please enter a valid Booth ID: ");
+            }
+
+            Console.Write("Enter Attendee Name: ");
+            string attendeeName = Console.ReadLine();
+
+            Console.Write("Enter Rating (1-5, or leave blank for no rating): ");
+            int? rating = null;
+            string ratingInput = Console.ReadLine();
+            if (int.TryParse(ratingInput, out int r) && r >= 1 && r <= 5)
+            {
+                rating = r;
+            }
+
+            Attendee attendee = new Attendee
+            {
+                Name = attendeeName,
+                Rating = rating
+            };
+
+            booths.First(b => b.BoothID == boothID).Attendees.Add(attendee);
+            Console.WriteLine("Attendee recorded successfully!");
+        }
+
+        // Method to display all booths with attendee count
+        public void DisplayBooths()
+        {
+            Console.WriteLine("Booths and Attendee Count:");
+            foreach (var booth in booths)
+            {
+                Console.WriteLine($"Booth ID: {booth.BoothID}, Name: {booth.BoothName}, Type: {booth.BoothType}, Attendees: {booth.Attendees.Count}");
+            }
+        }
+
+        // Method to view feedback for a specific booth
+        public void ViewFeedback()
+        {
+            Console.Write("Enter Booth ID: ");
+            int boothID;
+            while (!int.TryParse(Console.ReadLine(), out boothID) || !booths.Any(b => b.BoothID == boothID))
+            {
+                Console.Write("Invalid Booth ID. Please enter a valid Booth ID: ");
+            }
+
+            var booth = booths.First(b => b.BoothID == boothID);
+            Console.WriteLine($"Feedback for Booth: {booth.BoothName}");
+            foreach (var attendee in booth.Attendees)
+            {
+                Console.WriteLine($"Attendee: {attendee.Name}, Rating: {attendee.Rating}");
+            }
+
+            var ratings = booth.Attendees.Where(a => a.Rating.HasValue).Select(a => a.Rating.Value).ToList();
+            if (ratings.Count > 0)
+            {
+                double averageRating = ratings.Average();
+                Console.WriteLine($"Average Rating: {averageRating:F2}");
+            }
+            else
+            {
+                Console.WriteLine("No ratings available for this booth.");
             }
         }
     }
